@@ -1,0 +1,427 @@
+= Introduction
+
+So I skipped writing notes in this course because I was already familiar. I wanted to start writing notes on Django and Python since the topic is very new to me. So here it goes. 
+I'm going to write everything that happens in real time. I may end up comparing to Nodejs since that is something I'm familiar with.
+
+== What is django 
+
+It's a framework for backend that gives lots of functionality
+
+== starting a project 
+
+type `django-admin startproject nameofproject`
+
+An issue I got is `django-admin: command not found`. 
+So, I've already got Python installed, so all I need is Django.
+
+To install using python, I first cloned the django
+git:
+`git clone https://github.com/django/django.git`
+and then installed it:
+
+`python -m pip install -e django/`
+
+Since, I'm on windows, I had to add environment variables,
+so I added the folder: 
+
+`C:\ThatFolderYouClonedAt\django\django\bin`
+
+Unfortunately, I can't use `django-admin`, but instead, have to use `django-admin.py` to access it?
+
+Okay, what's going on? When I type 
+`django-admin.py startproject nameofproject`, I get a deprecated warning in favor of django-admin
+
+Okay, after some googling, I'm not sure why that error happens, but it works, but this command below also works:
+
+`python -m django startproject nameofproject`
+
+== what's in 
+
+Okay, I finally managed to start a project. After initiating, I get a file
+
+`manage.py`
+a folder with the project name, and inside: 
+
+`__init__.py`,
+`asgi.py`,
+`settings.py`,
+`urls.py`,
+`wsgi.py`
+
+The teacher then says that `manage.py` isn't something we'd typically touch, but we use it be able to execute commands in the project. More about it later. 
+
+`settings.py` is something we'll be playing with often to modify our django app.
+
+`urls.py` is a toc of all the urls/routes
+
+== start the server
+
+Go into your project's directory where your `manage.py` sits and type:
+
+`python manage.py runserver`
+
+Great, the only message I got after writing that was:
+`Watching for file changes with StatReloader`, 
+and that was it. In the video he received more information such as where it's hosted. Luckily for the video, now I know it's actually in `localhost:8000`
+
+Neat! It says 
+
+"The install worked successfully! Congratulations!" which is the default page that Django gave. 
+
+== create an app within the project
+
+So the professor says that sometimes projects has different apps, and to create an app, 
+
+you can write: 
+
+`python manage.py startapp appname`
+
+After writing it, the directory now has:
+
+`__init__.py`, `admin.py`, `apps.py`, `models.py`, `tests.py`, `views.py`
+
+And a folder inside called `migrations`
+with `__init__.py`
+
+He says he won't be digging too much on the other files, but primary on `views.py` which is something that controls what the user sees when they visit a particular route. 
+
+== add app to project
+
+After creating the new app for the project, we need to add it to the project. In order to do so, 
+you need to head into your project's directory into `settings.py`
+
+find the line that says `INSTALLED_APPs = [...]` add 
+the name of your app into the list. I named the app, `hello`, so all I had to do was add *'hello'* into the list. 
+
+== creating a view for the app
+
+Now we can start to modify the app. 
+In the app's folder, go into `views.py`
+In order to create a view, we have to define a function.
+The function has to take in an argument called `request` which is the http request that the client makes in order to access the server.
+
+We will do something simple for now, which is hello world. 
+
+So what we do is: 
+
+```
+def index(request):
+    return HttpResponse("Hello World")
+```
+Don't forget to include the class that was made by django called `HttpResponse` by importing it at the top.
+
+`from django.http import HttpResponse`
+
+Now that we created this views function called `index`, now how do we use it to let our users see it?
+
+So right now, we want our app to have its own urls control. For example, it would end up being: localhost:8000/hello/newroute
+
+In order to have the app have its own urls, we have to create a file called `urls.py` inside the app directory.
+
+Now in that file, it'll be our table of contents of urls, but we'd have to set it up. 
+First import path
+
+`from django.urls import path`
+
+create an array variable `urlpatterns` with its first path as no path such as going to localhost:8000/hello/ so it'll be an empty string. 
+
+`path("", thatfunction, name="index")`
+
+we get thatfunction by importing it. So be sure to add:
+`from . import views`
+
+so now we can call the function by:
+`views.index`
+
+all together would look like this:
+
+```
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("", views.index, name="index")
+]
+```
+
+Now that we configured a path (but technically a default path/no path) for our app "hello", we'd have to connect it to the project. 
+
+open up the project's `urls.py`
+
+So far the only thing in there is the `admin/` route for urlpatterns, so we'd have to add what we made in our app and to do that we'd need `include` imported. 
+
+with `django.urls`, add include like so:
+`from django.urls import path, include` and now you can use it by adding our app's urls to `urlpatterns`
+
+`path('hello/', include('hello.urls'))`
+
+So now when you go to:
+`localhost:8000/hello`, you'll see the message created in the app's views *Hello World*
+
+of course, if i wanted to get rid of the hello path and have that message for `localhost:8000`, I could just modify the path as: 
+`path('', include('hello.urls))` 
+and that would work!
+
+== A path that is dynamic
+
+Now that we've learned how to create a path, we can have it work with placeholders. 
+For this, we're going to have a route that takes in a name and says *Hello (name)*. Son this case, it will take a new argument for the views function. 
+
+in `views.py` for our app,
+
+create a new function named anything, but we called it `greet`:
+
+```
+def greet(request, name):
+    return HttpResponse(f"Hello, {name}")
+```
+
+Now we have to assign this function to a route for our app, so we add:
+
+`path("<str:name>", views.greet, name="greet")`
+
+So what's new is the path. What's it saying is that it can allow any string into the route, and we gave it a variable called `name`. When we give it the function `Views.greet`, it will also pass in that variable we created `name` as a parameter into our views function.
+
+So now that I visit `localhost:8000/timmy`,
+I'll now get the message: *Hello, timmy*
+
+There's a special python code that capitalizes the first letter of a string called `capitalize()`. We can use that in our views function when we pass in `name`
+
+`return HttpResponse(f"Hello, {name.capitalize()}")`
+
+So now even though our url path would be `localhost:8000/timmy`, it would say *Hello, Timmy*
+
+== Render an HTML for our route
+
+So instead of writing up the html, you can have the views function render the html file. 
+
+By default, it will search for the html file inside a `templates` folder. But there isn't one so we'd have to create it inside of our app.
+
+For the sake of namespace organization purposes and just in case there's no conflicting `index.html`, it's suggested to create another folder inside templates with your app's name. So in this case, I created a `hello` folder inside `templates`. And within the `hello` template folder, create a file called `index.html`
+
+
+Within the `index.html` file, I created a very basic html file with a hello world within an h1 tag. 
+
+Now we have to modify the `views` function to render the html file. 
+We're going to change index function. So instead of httpresponse, we're going to use render. We have to pass in request, and a path to the index file starting from the templates. 
+
+`return render(request, 'hello/index.html')`
+
+So when following this tutorial, I received an error: 
+`TemplateDoesNotExist`
+
+I didn't realize I had to set a template directory. 
+This is located in the project's `settings.py`
+You'll find `Templates = []`. 
+You'll see a property `DIRS`, and add in the path for templates. The way we have it, I have it in the app's directory so `DIRS` would look something like this: 
+
+`'DIRS': ['hello/templates`]`
+
+Now, the path works, and I see my html page. Since it's an array, we can add more template paths if we want. 
+
+== Render a more dynamic HTML page with Django's templating language
+
+We're going to change our greet function to work the same way, but with html and we will also create a new html. We'll call it `greet.html` inside our template's folder under our app's name. 
+
+
+inside the greet function with the `render()` function, the 
+
+* first parameter is the request from the function, 
+* second is the path of the template, and 
+* third is the content or data we want to send to the html. It's data is written as a `python dictionary` which is like javascript's `objects` so it'll have keys and values.
+
+
+`return render(request, 'hello/greet.html', {
+    "name": name.capitalize(),
+})`
+
+As a refresher, the variable `name` was passed in during URLs for any string put in. Such as `localhost:8000/sarah`, that variable being passed around in the name of `name` now has a value of `sarah`.
+
+So now that we have that setup, we have to actually create the html file using that dictionary passed in the render with the key `person` and value of variable `name` that has been passed around. In the lesson he had the key with the name `name`, but I changed it to `person` as a keyname to make it less confusing and overused.
+
+So anyway, the html file will be named `greet.html`
+and it'll be the same as the other one, except we can use the content that was passed in from the render. The only thing we passed in was `person` and its value. So to use the variable, we pass it in two curly brackets like this `{{person}}`
+and now you're able to use it. 
+So together, it would look: 
+
+`<h1>Hello, {{person}}</h1>`
+
+Now, that that's complete, I can go to the route `localhost:8000/sarah`,
+I get a big h1 tag that says *Hello, Sarah*
+
+== Using Python with our route 
+
+So the teacher goes to talk about a site called isitchristmas.com which will say no, but switches to yes on christmas day. 
+
+In this case, nobody's going to manually change anything, but will programatically change the value to "yes" if something is true otherwise say "no"
+
+For our new app, we're going to call it `newyear` that will say "yes", if it's new years. 
+
+=== refresher on how to get going before creating our main logic 
+So as a refresher, to add a new app called *newyear*, type in terminal:
+
+`python manage.py startapp newyear`
+
+and it will create a new directory called newyear with all the same stuff as our hello app. 
+
+NOTE: I remember in the project's urls I made our hello app go to index with empty route, so I changed that to 'hello/' like this `path('hello/', include('hello.urls'))` so now if I want a greeting, i'd have to go to `localhost:8000/hello/sarah` to get that message we've been working on earlier. 
+
+Anyway, back to our newyear app. 
+
+Now that we've created our new app, we have to add our app to our `settings.py` and add it to our `INSTALLED_APPS`. 
+
+```
+INSTALLED_APPS = [
+    'hello',
+    'newyear',
+    ...
+]
+```
+
+Now that we added our app, we'd have to do the same thing for URLS in our project folder. 
+The same as we did with hello, copy and paste and change the values for newyear. So it'll look like this: 
+
+`path('newyear/', include('newyear.urls'))`
+
+Again, that urls file doesn't exist yet, so we have to create it. 
+Go to our newyear app and add a file called `urls.py`
+
+First thing we need for our urls file is `path` so import it. 
+
+`from django.urls import path`
+and then we'd most likely be using functions from our views file, so make sure to import that as well 
+
+`from . import views`
+
+and now for the actual urls, we'd need our array variable `urlpatterns = []`
+
+with the paths and function to go with it. So for our first function, it would go to the default route. We will name it (didn't make it yet) *index* like we did with hello app. 
+
+`urlpatterns = [
+    path("", views.index, name="index")
+]`
+
+Now, we can get started by creating that index function inside the `views.py` file in our newyear app. 
+
+=== our index logic and using tool
+
+The purpose again is to change the value when something is true, so we will write that logic inside our index function using built in python module called `datetime`
+
+When we use the property `now()` as part of datetime, we will get the current... anything. 
+For example, first we import it. 
+
+`import datetime`
+
+and we create a variable that uses `now()` with: 
+
+`now = datetime.datetime.now()`
+
+So if we want to get the current year, we could call it like this: 
+
+`now.year` will give 2020
+`now.month` will give December 
+`now.day` will give 18
+and so on... 
+
+So to use it in a condition, we could write: 
+
+`now.month == 1 and now.day == 1` and it will give it `false`. 
+
+So now we can use it for our content key/val pair for our newyear route. I gave the key name *is_it_newyear* just to avoid using newyear all over the place. 
+
+`return render(request, 'newyear/index.html', {
+    "is_it_newyear": now.month == 1 and now.day == 1
+})`
+
+Now that we passed that information in, we need to create the actual html file. 
+
+The same way, we create a templates folder with another folder with the name of our app and then an `index.html` inside. 
+
+In our `index.html` file, we'll create a conditional render. We passed in a `true` or `false` value, so if something is true, render this element, if false, render the other element. In that case, we use `{% %}` for our django logic. Honestly, this reminds me of PHP... So basically it has to be within these tags to understand the logic rather than python's indentation. 
+
+So this is how it looks together with the if/else condition in our html
+
+```
+        {% if newyear %}
+            <h1>YES</h1>
+        {% else %}
+            <h1>NO</h1>
+        {% endif %}
+```
+
+Now when going to the route `localhost:8000/newyear`,
+you will simply get a big *NO* if it's not on new year's day. 
+
+When looking at the source code for that html page, you will get the simple html without any of the python logic.
+
+== Adding a CSS file or "static file" 
+
+To get started, we'll create a new folder in our app called `static`, and then same as templates, let's put our files in our app's name for organization namespace purpose. and then we can create a `style.css` file inside that namespace. 
+
+Inside the css file, add in a property to see it work. I added what the prof added: 
+
+```
+h1 {
+    font-family: sans-serif;
+    font-size: 90px;
+    text-align: center;
+}
+```
+
+so now that we created a style.css file in static, we just need to import it and include it to our app. 
+
+Go back to our `index.html` file for newyear add in 
+`{% load static %}` at the very top of the file before DOCTYPE. 
+
+And now add a link to the css style within the head tag
+
+Including a css style file has always been like this: 
+
+`<link href="{% static 'newyear/styles.css' %}" rel="stylesheet">`
+
+The only thing difference is the href. It uses the static variable and then the path of the styles.css from the static folder. 
+
+When I visited localhost:8000/newyear, you're supposed to see your style changes. 
+
+I received an error 404 for my `style.css` file, so as it turns out, I was supposed to set some things up for my windows machine.  
+
+At the top of the project's `settings.py`, I need to `import os.path`
+
+and then under `STATIC_URL = '/static/'`
+
+I need to add `STATICFILES_DIRS = ( os.path.join('static'), )` under it. 
+
+Refresh the page, and the static stylesheet should load. 
+
+== All together with a TODO App
+
+Now that we learned all these cool techniques, we're going to put them all together as a todo app that we're going to call *tasks*. 
+Once again, create a new app as we've done before and finish all those steps as we've done before. 
+
+`python manage.py startapp tasks`
+
+So I'm going to skip ahead and write about `views.py`'s function `index`
+
+We're going to create a global variable outside of index function called `tasks` and give it an array of 3 random things. We gave it `tasks = ["foo", "bar", "baz"]`. 
+
+Now, inside of our render, we want to pass that information to our context dictionary. 
+
+```
+{
+    "ourTasks": tasks
+}
+```
+
+Now in the HTML page that we created for tasks, we can access our key `ourTasks`. 
+
+since that value is an array, we'd need to loop over our array of tasks. In order to do that, it would be very similar to our condition render. 
+
+In our html we created a list item, and for each item, give it an li. 
+
+```
+        <ul>
+            {% for task in ourTasks %}
+            <li>{{ task }}</li>
+            {% endfor %}
+        </ul>
+```
