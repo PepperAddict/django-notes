@@ -1,6 +1,6 @@
 = Introduction
 
-So I skipped writing notes in this course because I was already familiar. I wanted to start writing notes on Django and Python since the topic is very new to me. So here it goes. 
+So I skipped writing notes in the earlier parts of the course because I was already familiar. I wanted to start writing notes on Django and Python since the topic is very new to me. So here it goes. 
 I'm going to write everything that happens in real time. I may end up comparing to Nodejs since that is something I'm familiar with.
 
 == What is django 
@@ -425,3 +425,246 @@ In our html we created a list item, and for each item, give it an li.
             {% endfor %}
         </ul>
 ```
+
+Now if everything worked great, when we go to `localhost:8000/tasks` you'll now see a bullet list of the items that were created "foo", "bar", and "baz".
+
+=== To Add in tasks 
+
+Great, we got a for loop going, now we want to modify the tasks. 
+
+We will create a form that the user will be able to add more tasks. 
+
+So while we get started, we have to create a new views function called `add` that will render an html page called `add.html` when we go to the path `add`. So make sure to do the same for urlpatterns for the path *add*. 
+
+Inside the HTML page for add, create a very simple form that has an input and a submit button. 
+
+```
+        <form>
+            <input type="text" name="text">
+            <input type="submit">
+        </form>
+```
+
+so now that when you go to `localhost:8000/tasks/add`,
+you will see a simple add task form. 
+
+Of course, this doesn't do anything yet, but at least we have one of the bulding blocks down. 
+
+
+== Template Inheritance 
+
+The prof is now discussing on the issue of having to copy and paste the same html type code over and over again when there's a better approach that is given with Django. 
+
+We will create an html page that is our layout. 
+So what will happen is add.html and index.html will _inherit_ the code from. That way we don't have to copy and paste the usual anymore. 
+
+First thing we do is create a new html file in our templates/tasks folder called `layout.html` and fill in with the usual html stuff that will be shared. 
+
+So our layout will have a variable in place for our other html to be plugged in later. 
+
+We will place that in our `<body></body>` tag by adding: 
+
+```
+{% block body %}
+{% endblock %}
+```
+
+He goes onto say that the name *body* could be anything, but in our lesson, we'll just call it body. 
+
+As for block in our layout, that section is letting the html know that, that *block* will change.
+
+
+Now that we have finished setting up layout.html, we can go to our index.html, and add.html and get rid of what's already in our layout which is everything except for what's inside `<body></body>`
+
+Now for it to actually add what's in the layout is by adding this code at the very top of each of those html pages: 
+
+`{% extends "tasks/layout.html %}`
+
+Now that we've imported what's inside of layout, we need to plug in the code to the rightful place by encasing our html code inside this script tag: 
+
+```
+{% block body %}
+THE HTML CODE YOU WANT TO PUT IN PLACE
+{% endblock %}
+```
+
+Now when visiting those pages again, it should look exactly the same.
+
+== Adding a link
+
+So instead of hardcoding our a path for our href, we will use django's tool to make a more dynamic link that reflects to our app. 
+
+So now, we will use the name that we gave our path in `urls.py` for our route. 
+
+so for our href to add task, we will type `{% url 'add' %}`
+to pull out the url for our add path. 
+
+all together will look like this: 
+
+`<a href="{% url 'add' %}">Add a Task</a>`
+
+Now when you go to `localhost:8000/tasks` there's a link to add a task which sends it just fine. 
+
+So the professor says to do the same thing for add task to go back to tasks. Change the url name to `index` and that should be it. So what I have is working fine. I get sent to tasks, but the professor says there's a problem. Even though I'm not experiencing the issue, maybe it's good to try and understand why there would be a problem. 
+
+So what happened with the prof is that `index` sent over to `newyear` app. There's now a `namespace collision`. 
+
+So if that happens, we need to be more specific that way the link doesn't send it to a different app. 
+
+in our `urls.py` we need to give it an app name which is simply done by adding this line before urlpatterns : 
+
+`app_name = "tasks"`
+
+So now in our links we have to add `tasks:` before the name. So for example: 
+
+`<a href="{% url 'tasks:add' %}">Add a Task</a>`
+
+== Add button Send (post)
+
+We're back on the topic of the add page, but now we will make it do something. 
+
+We go back to our form in `add.html` and we need to add an action to our form that goes to `tasks:add` and we'll figure out what to do with the data we received from the form. We will also need to specify the method we will be using. Since it's a post request, we will have to specify that it is a post request by adding `method: "post"`
+
+so it would look like this: 
+
+```
+<form action="{% url 'tasks:add' %}" method="post"> ... </form>
+```
+
+=== Forbidden 403 because of CSRF verification
+
+csrf = cross site request forgery 
+
+So now there's a permission problem and to protect getting data from an outside source, it will automatically reject it. 
+
+Interesting. So it's a cors issue all over again but with django.
+
+Now, to handle this issue for our form, we will have to add in a csrf token. 
+
+so what happens is that the form will submit and include the token and we will process if the token is valid to make sure it's coming from the correct source. 
+
+luckily django comes with something that handles that stuff, and it's actually a django's middleware and it's already added into our project. In `settings.py` for our project, you can find it in MIDDLEWARE = [] and you will find `django.middleware.csrf.CsrfViewMiddleware` already included. 
+
+To simply add our token to our form, we just need to add inside our form `{% csrf_token %}` above our other inputs. 
+
+After adding that in and refreshing our `/add` page and viewing the source, you'd notice that the csrf_token code generated a token for us by inserting it as an input with the name `csrfmiddlewaretoken`. interesting. 
+
+But now when adding an item and pressing enter, we are no longer receiving that error 403.
+
+== Use Django's form instead
+
+So for our add.html we created our own forms with html, so the prof wants to use Django's tool to manage our forms. To use it, we go in our app's `views.py` and import it in first 
+
+`from django import forms`
+
+Now we will create a class that will inherit from our import and give the data we want. So for right now we'd have one input that is a named task.
+
+```
+class NewTaskForm(forms.Form):
+    task = forms.CharField(label="New Task")
+```
+
+So now we have to bring it in for our content by adding in our add function the dictionary. 
+
+```
+{"forms": NewTaskForm()}
+```
+
+So now to use it, we have to add inside of our already made form, get rid of our input and replace it with 
+`{{form}}` to be able to use the inputs we've made in views.py. 
+
+So the beauty of this feature is being able to adjust our inputs through python rather than modifying the html and you can setup client side validation pretty easily through the backend. Which is great.
+
+So to test this feature, we can create a new one in `NewTaskForm()` by adding: `priority = forms.IntegerField(label="priority", min_value=1, max_value=10)`
+
+Now we have setup client side validation, it'll be important to also have server side validation. 
+
+
+Now our add function allows multiple methods, so to control our post method, we can add: 
+`if request.method == "POST"` and inside, we can create a variable with our form data by using our newtaskform(), but when we do it alone, it'll be an empty from, so we have to pull in the information as well from our post request like so. 
+
+`form = NewTaskFrom(request.POST)`
+
+so now with that new variable we pulled in, we can check to see if it's valid by simply putting it in a condition: 
+
+`if form.is_valid()` do something. 
+
+So now that it's validated, we can finally use the information sent over. 
+
+We'll create a new variable with the input data we got. simply create our vriable using the cleaned_data and the name we gave it. 
+
+`task = form.cleaned_data['task']`
+
+after getting that value, we can now add it to our array of items! 
+
+`tasks.append(task)`
+
+That's if everything was valid, and the prof wants us to make a functionality if the form was not valid by making an else and send back the page with the same form. Sending in back the form that was setup in our request.method == post condition will also give an error with it. 
+
+This is useful if someone can brute force the client side or the server side has been updated and client hasn't refreshed the page. 
+
+Okay, after that setup when entering the input field for our form, it submits and when you go back to tasks to see the result, we see the changes. What the prof wants is that after we add a task, we should be automatically redirected. 
+
+== Redirect to a page after success
+
+This is simply done into our django project by using `HttpResponseRedirect('/tasks')` and instead of hardcoding the exact path, we could use its name. `HttpResponseRedirect(reverse("tasks:index"))` is the better approach. 
+
+Of course, in order to use `HttpResponseRedirect()` and `reverse()`, we would have to import it. 
+
+```
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+```
+
+We can then add this code right after we appended our new task into our existing array.
+
+Now after going to our tasks page to add an item and press enter, we will then automatically be redirected to our tasks page to see what we added. 
+
+== Django Sessions Initiate
+
+So the issue of what we have is that we're storing these entries into a global variable for our server so others would be able to see it. 
+
+So instead we'd use sessions to remember where it's coming from and give that specific data to that user. 
+
+So to start off, we'll remove our global variable called tasks completely and create our session inside our `index` function.
+
+First to initiate our session, we'd need to make sure it doesn't exist first. 
+
+In order to get that started, we'd ask: 
+
+`if "tasks" not in request.session:`
+
+And if it doesn't, we'll create a session called taskss. 
+and make it an array with an empty list: 
+
+`request.session["tasks"] = []`
+
+Now that we created this session, we'd bring that into our key: *ourTasks*. 
+
+`"ourTasks": request.session["tasks"]`
+
+=== Error No Such Table: django_session
+
+After adding all of that and modifying our code and refrsehing our tasks page, we get an error that says 
+`No Such Table: django_session`. 
+
+Which basically means that django stores there django session into a table but right now the table doesn't exist so we'll have to create it. 
+
+we would have to type in cli 
+
+`python manage.py migrate` to be able to create that table the server needs. 
+
+Now when we start the server back up, the route  /tasks work back to normal. 
+
+== For loop can have an empty condition
+
+So the prof is mentioning that our tasks page looks ugly without some kind of content to let you know the list is empty. 
+
+So inside of our `index.html` before our `endofor` add
+`{% empty %}` and underneath what you want to show. 
+
+== Django Sessions Adding
+
+So we initiated it just fine, but we haven't properly set it up for adding. 
+
+The only code we had for adding was `tasks.append(task)`, so all we'd need to change is: `request.session["tasks"] += [task]` which adds to our sets of tasks. I tried to append, but I suppose it's different since that didn't work. 
