@@ -1,670 +1,196 @@
-= Introduction
+= Introduction 
 
-So I skipped writing notes in the earlier parts of the course because I was already familiar. I wanted to start writing notes on Django and Python since the topic is very new to me. So here it goes. 
-I'm going to write everything that happens in real time. I may end up comparing to Nodejs since that is something I'm familiar with.
+Now we're on the top of SQL, Models, and Migration. 
+I think I'm already familiar, but I should watch and take notes anyway just to see if I can fill in some gaps.
 
-== What is django 
+He introduces us to SQLite which will store all its data into a single file. 
 
-It's a framework for backend that gives lots of functionality
+He tells us that each data that we store has its own type. Such as integers and string.. etc. 
 
-== starting a project 
+== SQLite Types that it supports
 
-type `django-admin startproject nameofproject`
+* TEXT
+* NUMERIC
+* INTEGER
+* REAL
+* BLOB
 
-An issue I got is `django-admin: command not found`. 
-So, I've already got Python installed, so all I need is Django.
+== Create a table in SQLlite for flights
 
-To install using python, I first cloned the django
-git:
-`git clone https://github.com/django/django.git`
-and then installed it:
-
-`python -m pip install -e django/`
-
-Since, I'm on windows, I had to add environment variables,
-so I added the folder: 
-
-`C:\ThatFolderYouClonedAt\django\django\bin`
-
-Unfortunately, I can't use `django-admin`, but instead, have to use `django-admin.py` to access it?
-
-Okay, what's going on? When I type 
-`django-admin.py startproject nameofproject`, I get a deprecated warning in favor of django-admin
-
-Okay, after some googling, I'm not sure why that error happens, but it works, but this command below also works:
-
-`python -m django startproject nameofproject`
-
-== what's in 
-
-Okay, I finally managed to start a project. After initiating, I get a file
-
-`manage.py`
-a folder with the project name, and inside: 
-
-`__init__.py`,
-`asgi.py`,
-`settings.py`,
-`urls.py`,
-`wsgi.py`
-
-The teacher then says that `manage.py` isn't something we'd typically touch, but we use it be able to execute commands in the project. More about it later. 
-
-`settings.py` is something we'll be playing with often to modify our django app.
-
-`urls.py` is a toc of all the urls/routes
-
-== start the server
-
-Go into your project's directory where your `manage.py` sits and type:
-
-`python manage.py runserver`
-
-Great, the only message I got after writing that was:
-`Watching for file changes with StatReloader`, 
-and that was it. In the video he received more information such as where it's hosted. Luckily for the video, now I know it's actually in `localhost:8000`
-
-Neat! It says 
-
-"The install worked successfully! Congratulations!" which is the default page that Django gave. 
-
-== create an app within the project
-
-So the professor says that sometimes projects has different apps, and to create an app, 
-
-you can write: 
-
-`python manage.py startapp appname`
-
-After writing it, the directory now has:
-
-`__init__.py`, `admin.py`, `apps.py`, `models.py`, `tests.py`, `views.py`
-
-And a folder inside called `migrations`
-with `__init__.py`
-
-He says he won't be digging too much on the other files, but primary on `views.py` which is something that controls what the user sees when they visit a particular route. 
-
-== add app to project
-
-After creating the new app for the project, we need to add it to the project. In order to do so, 
-you need to head into your project's directory into `settings.py`
-
-find the line that says `INSTALLED_APPs = [...]` add 
-the name of your app into the list. I named the app, `hello`, so all I had to do was add *'hello'* into the list. 
-
-== creating a view for the app
-
-Now we can start to modify the app. 
-In the app's folder, go into `views.py`
-In order to create a view, we have to define a function.
-The function has to take in an argument called `request` which is the http request that the client makes in order to access the server.
-
-We will do something simple for now, which is hello world. 
-
-So what we do is: 
+This is for creating the column tables.
+We use `CREATE TABLE`
 
 ```
-def index(request):
-    return HttpResponse("Hello World")
-```
-Don't forget to include the class that was made by django called `HttpResponse` by importing it at the top.
-
-`from django.http import HttpResponse`
-
-Now that we created this views function called `index`, now how do we use it to let our users see it?
-
-So right now, we want our app to have its own urls control. For example, it would end up being: localhost:8000/hello/newroute
-
-In order to have the app have its own urls, we have to create a file called `urls.py` inside the app directory.
-
-Now in that file, it'll be our table of contents of urls, but we'd have to set it up. 
-First import path
-
-`from django.urls import path`
-
-create an array variable `urlpatterns` with its first path as no path such as going to localhost:8000/hello/ so it'll be an empty string. 
-
-`path("", thatfunction, name="index")`
-
-we get thatfunction by importing it. So be sure to add:
-`from . import views`
-
-so now we can call the function by:
-`views.index`
-
-all together would look like this:
+CREATE TABLE flights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    origin TEXT NOT NULL,
+    destination TEXT NOT NULL,
+    duration INTEGER NOT NULL
+)
 
 ```
-from django.urls import path
-from . import views
 
-urlpatterns = [
-    path("", views.index, name="index")
-]
-```
+== Add a row to a table
 
-Now that we configured a path (but technically a default path/no path) for our app "hello", we'd have to connect it to the project. 
-
-open up the project's `urls.py`
-
-So far the only thing in there is the `admin/` route for urlpatterns, so we'd have to add what we made in our app and to do that we'd need `include` imported. 
-
-with `django.urls`, add include like so:
-`from django.urls import path, include` and now you can use it by adding our app's urls to `urlpatterns`
-
-`path('hello/', include('hello.urls'))`
-
-So now when you go to:
-`localhost:8000/hello`, you'll see the message created in the app's views *Hello World*
-
-of course, if i wanted to get rid of the hello path and have that message for `localhost:8000`, I could just modify the path as: 
-`path('', include('hello.urls))` 
-and that would work!
-
-== A path that is dynamic
-
-Now that we've learned how to create a path, we can have it work with placeholders. 
-For this, we're going to have a route that takes in a name and says *Hello (name)*. Son this case, it will take a new argument for the views function. 
-
-in `views.py` for our app,
-
-create a new function named anything, but we called it `greet`:
+We use `INSERT INTO`
 
 ```
-def greet(request, name):
-    return HttpResponse(f"Hello, {name}")
-```
-
-Now we have to assign this function to a route for our app, so we add:
-
-`path("<str:name>", views.greet, name="greet")`
-
-So what's new is the path. What's it saying is that it can allow any string into the route, and we gave it a variable called `name`. When we give it the function `Views.greet`, it will also pass in that variable we created `name` as a parameter into our views function.
-
-So now that I visit `localhost:8000/timmy`,
-I'll now get the message: *Hello, timmy*
-
-There's a special python code that capitalizes the first letter of a string called `capitalize()`. We can use that in our views function when we pass in `name`
-
-`return HttpResponse(f"Hello, {name.capitalize()}")`
-
-So now even though our url path would be `localhost:8000/timmy`, it would say *Hello, Timmy*
-
-== Render an HTML for our route
-
-So instead of writing up the html, you can have the views function render the html file. 
-
-By default, it will search for the html file inside a `templates` folder. But there isn't one so we'd have to create it inside of our app.
-
-For the sake of namespace organization purposes and just in case there's no conflicting `index.html`, it's suggested to create another folder inside templates with your app's name. So in this case, I created a `hello` folder inside `templates`. And within the `hello` template folder, create a file called `index.html`
-
-
-Within the `index.html` file, I created a very basic html file with a hello world within an h1 tag. 
-
-Now we have to modify the `views` function to render the html file. 
-We're going to change index function. So instead of httpresponse, we're going to use render. We have to pass in request, and a path to the index file starting from the templates. 
-
-`return render(request, 'hello/index.html')`
-
-So when following this tutorial, I received an error: 
-`TemplateDoesNotExist`
-
-I didn't realize I had to set a template directory. 
-This is located in the project's `settings.py`
-You'll find `Templates = []`. 
-You'll see a property `DIRS`, and add in the path for templates. The way we have it, I have it in the app's directory so `DIRS` would look something like this: 
-
-`'DIRS': ['hello/templates`]`
-
-Now, the path works, and I see my html page. Since it's an array, we can add more template paths if we want. 
-
-== Render a more dynamic HTML page with Django's templating language
-
-We're going to change our greet function to work the same way, but with html and we will also create a new html. We'll call it `greet.html` inside our template's folder under our app's name. 
-
-
-inside the greet function with the `render()` function, the 
-
-* first parameter is the request from the function, 
-* second is the path of the template, and 
-* third is the content or data we want to send to the html. It's data is written as a `python dictionary` which is like javascript's `objects` so it'll have keys and values.
-
-
-`return render(request, 'hello/greet.html', {
-    "name": name.capitalize(),
-})`
-
-As a refresher, the variable `name` was passed in during URLs for any string put in. Such as `localhost:8000/sarah`, that variable being passed around in the name of `name` now has a value of `sarah`.
-
-So now that we have that setup, we have to actually create the html file using that dictionary passed in the render with the key `person` and value of variable `name` that has been passed around. In the lesson he had the key with the name `name`, but I changed it to `person` as a keyname to make it less confusing and overused.
-
-So anyway, the html file will be named `greet.html`
-and it'll be the same as the other one, except we can use the content that was passed in from the render. The only thing we passed in was `person` and its value. So to use the variable, we pass it in two curly brackets like this `{{person}}`
-and now you're able to use it. 
-So together, it would look: 
-
-`<h1>Hello, {{person}}</h1>`
-
-Now, that that's complete, I can go to the route `localhost:8000/sarah`,
-I get a big h1 tag that says *Hello, Sarah*
-
-== Using Python with our route 
-
-So the teacher goes to talk about a site called isitchristmas.com which will say no, but switches to yes on christmas day. 
-
-In this case, nobody's going to manually change anything, but will programatically change the value to "yes" if something is true otherwise say "no"
-
-For our new app, we're going to call it `newyear` that will say "yes", if it's new years. 
-
-=== refresher on how to get going before creating our main logic 
-So as a refresher, to add a new app called *newyear*, type in terminal:
-
-`python manage.py startapp newyear`
-
-and it will create a new directory called newyear with all the same stuff as our hello app. 
-
-NOTE: I remember in the project's urls I made our hello app go to index with empty route, so I changed that to 'hello/' like this `path('hello/', include('hello.urls'))` so now if I want a greeting, i'd have to go to `localhost:8000/hello/sarah` to get that message we've been working on earlier. 
-
-Anyway, back to our newyear app. 
-
-Now that we've created our new app, we have to add our app to our `settings.py` and add it to our `INSTALLED_APPS`. 
+INSERT INTO flights
+    (origin, destination, duration)
+    VALUES ("New York", "London", 415)
 
 ```
-INSTALLED_APPS = [
-    'hello',
-    'newyear',
-    ...
-]
-```
 
-Now that we added our app, we'd have to do the same thing for URLS in our project folder. 
-The same as we did with hello, copy and paste and change the values for newyear. So it'll look like this: 
+INSERT INTO flights (origin, destination, duration) VALUES ("Shanghai", "Paris", 760);
+INSERT INTO flights (origin, destination, duration) VALUES ("Istanbul", "Tokyo", 700);
+INSERT INTO flights (origin, destination, duration) VALUES ("New York", "Paris", 435);
+INSERT INTO flights (origin, destination, duration) VALUES ("Moscow", "Paris", 245);
+INSERT INTO flights (origin, destination, duration) VALUES ("Lima", "New York", 455);
 
-`path('newyear/', include('newyear.urls'))`
+== Retrieve the data from table
 
-Again, that urls file doesn't exist yet, so we have to create it. 
-Go to our newyear app and add a file called `urls.py`
+We use `SELECT`
 
-First thing we need for our urls file is `path` so import it. 
-
-`from django.urls import path`
-and then we'd most likely be using functions from our views file, so make sure to import that as well 
-
-`from . import views`
-
-and now for the actual urls, we'd need our array variable `urlpatterns = []`
-
-with the paths and function to go with it. So for our first function, it would go to the default route. We will name it (didn't make it yet) *index* like we did with hello app. 
-
-`urlpatterns = [
-    path("", views.index, name="index")
-]`
-
-Now, we can get started by creating that index function inside the `views.py` file in our newyear app. 
-
-=== our index logic and using tool
-
-The purpose again is to change the value when something is true, so we will write that logic inside our index function using built in python module called `datetime`
-
-When we use the property `now()` as part of datetime, we will get the current... anything. 
-For example, first we import it. 
-
-`import datetime`
-
-and we create a variable that uses `now()` with: 
-
-`now = datetime.datetime.now()`
-
-So if we want to get the current year, we could call it like this: 
-
-`now.year` will give 2020
-`now.month` will give December 
-`now.day` will give 18
-and so on... 
-
-So to use it in a condition, we could write: 
-
-`now.month == 1 and now.day == 1` and it will give it `false`. 
-
-So now we can use it for our content key/val pair for our newyear route. I gave the key name *is_it_newyear* just to avoid using newyear all over the place. 
-
-`return render(request, 'newyear/index.html', {
-    "is_it_newyear": now.month == 1 and now.day == 1
-})`
-
-Now that we passed that information in, we need to create the actual html file. 
-
-The same way, we create a templates folder with another folder with the name of our app and then an `index.html` inside. 
-
-In our `index.html` file, we'll create a conditional render. We passed in a `true` or `false` value, so if something is true, render this element, if false, render the other element. In that case, we use `{% %}` for our django logic. Honestly, this reminds me of PHP... So basically it has to be within these tags to understand the logic rather than python's indentation. 
-
-So this is how it looks together with the if/else condition in our html
+=== Below is retrieve all from flights
 
 ```
-        {% if newyear %}
-            <h1>YES</h1>
-        {% else %}
-            <h1>NO</h1>
-        {% endif %}
+SELECT * FROM flights;
 ```
 
-Now when going to the route `localhost:8000/newyear`,
-you will simply get a big *NO* if it's not on new year's day. 
-
-When looking at the source code for that html page, you will get the simple html without any of the python logic.
-
-== Adding a CSS file or "static file" 
-
-To get started, we'll create a new folder in our app called `static`, and then same as templates, let's put our files in our app's name for organization namespace purpose. and then we can create a `style.css` file inside that namespace. 
-
-Inside the css file, add in a property to see it work. I added what the prof added: 
+=== This select will give you the ones with these columns
 
 ```
-h1 {
-    font-family: sans-serif;
-    font-size: 90px;
-    text-align: center;
-}
+SELECT origin, destination FROM flights;
 ```
 
-so now that we created a style.css file in static, we just need to import it and include it to our app. 
+=== Select only certain rows
 
-Go back to our `index.html` file for newyear add in 
-`{% load static %}` at the very top of the file before DOCTYPE. 
-
-And now add a link to the css style within the head tag
-
-Including a css style file has always been like this: 
-
-`<link href="{% static 'newyear/styles.css' %}" rel="stylesheet">`
-
-The only thing difference is the href. It uses the static variable and then the path of the styles.css from the static folder. 
-
-When I visited localhost:8000/newyear, you're supposed to see your style changes. 
-
-I received an error 404 for my `style.css` file, so as it turns out, I was supposed to set some things up for my windows machine.  
-
-At the top of the project's `settings.py`, I need to `import os.path`
-
-and then under `STATIC_URL = '/static/'`
-
-I need to add `STATICFILES_DIRS = ( os.path.join('static'), )` under it. 
-
-Refresh the page, and the static stylesheet should load. 
-
-== All together with a TODO App
-
-Now that we learned all these cool techniques, we're going to put them all together as a todo app that we're going to call *tasks*. 
-Once again, create a new app as we've done before and finish all those steps as we've done before. 
-
-`python manage.py startapp tasks`
-
-So I'm going to skip ahead and write about `views.py`'s function `index`
-
-We're going to create a global variable outside of index function called `tasks` and give it an array of 3 random things. We gave it `tasks = ["foo", "bar", "baz"]`. 
-
-Now, inside of our render, we want to pass that information to our context dictionary. 
+selecting the id = 3 
 
 ```
-{
-    "ourTasks": tasks
-}
-```
-
-Now in the HTML page that we created for tasks, we can access our key `ourTasks`. 
-
-since that value is an array, we'd need to loop over our array of tasks. In order to do that, it would be very similar to our condition render. 
-
-In our html we created a list item, and for each item, give it an li. 
+SELECT * FROM flights WHERE id = 3;
 
 ```
-        <ul>
-            {% for task in ourTasks %}
-            <li>{{ task }}</li>
-            {% endfor %}
-        </ul>
-```
 
-Now if everything worked great, when we go to `localhost:8000/tasks` you'll now see a bullet list of the items that were created "foo", "bar", and "baz".
-
-=== To Add in tasks 
-
-Great, we got a for loop going, now we want to modify the tasks. 
-
-We will create a form that the user will be able to add more tasks. 
-
-So while we get started, we have to create a new views function called `add` that will render an html page called `add.html` when we go to the path `add`. So make sure to do the same for urlpatterns for the path *add*. 
-
-Inside the HTML page for add, create a very simple form that has an input and a submit button. 
+or your can select where origin is new york
 
 ```
-        <form>
-            <input type="text" name="text">
-            <input type="submit">
-        </form>
+SELECT * FROM flights WHERE origin = "New York";
 ```
 
-so now that when you go to `localhost:8000/tasks/add`,
-you will see a simple add task form. 
+== Create a SQLlite database
 
-Of course, this doesn't do anything yet, but at least we have one of the bulding blocks down. 
+In order to do that, all you need to do is create a file manually.
 
+For this lesson, we're going to call it flights.sql
 
-== Template Inheritance 
+`touch flights.sql`
 
-The prof is now discussing on the issue of having to copy and paste the same html type code over and over again when there's a better approach that is given with Django. 
+Now, to initiate it, `sqlite3 flights.sql` now you're able to write commands and it'll execute the code. 
 
-We will create an html page that is our layout. 
-So what will happen is add.html and index.html will _inherit_ the code from. That way we don't have to copy and paste the usual anymore. 
+First step is to type out the command to create the table, and in our lesson, we're creating a flights table. 
 
-First thing we do is create a new html file in our templates/tasks folder called `layout.html` and fill in with the usual html stuff that will be shared. 
+to confirm that the table has been created, type `.tables`
 
-So our layout will have a variable in place for our other html to be plugged in later. 
+== We can make sqlite a bit more prettier by activating columns mode with headers. 
 
-We will place that in our `<body></body>` tag by adding: 
+`.mode columns`
 
-```
-{% block body %}
-{% endblock %}
-```
+and 
 
-He goes onto say that the name *body* could be anything, but in our lesson, we'll just call it body. 
+`.headers yes`
 
-As for block in our layout, that section is letting the html know that, that *block* will change.
+And now it's better formatted
 
+== Get origin only from one place 
 
-Now that we have finished setting up layout.html, we can go to our index.html, and add.html and get rid of what's already in our layout which is everything except for what's inside `<body></body>`
+in sqlite, we want only if origin is from new york
 
-Now for it to actually add what's in the layout is by adding this code at the very top of each of those html pages: 
+`SELECT * FROM flights WHERE origin = "New York";`
 
-`{% extends "tasks/layout.html %}`
+Should get 2 entries 
 
-Now that we've imported what's inside of layout, we need to plug in the code to the rightful place by encasing our html code inside this script tag: 
+== We can add math to our query to get what we want or boolean
 
-```
-{% block body %}
-THE HTML CODE YOU WANT TO PUT IN PLACE
-{% endblock %}
-```
+`SELECT * FROM flights WHERE duration > 500;`
 
-Now when visiting those pages again, it should look exactly the same.
+Will look in our column duration and only give us greater than 500. 
+Also give us two entries. 
 
-== Adding a link
+== We can also give it an *and* 
 
-So instead of hardcoding our a path for our href, we will use django's tool to make a more dynamic link that reflects to our app. 
+`SELECT * FROM flights WHERE duration > 500 AND destination = "Paris";`
 
-So now, we will use the name that we gave our path in `urls.py` for our route. 
+Now that will only give us only one result since both has to be true. 
 
-so for our href to add task, we will type `{% url 'add' %}`
-to pull out the url for our add path. 
+== We can use *or* instead
 
-all together will look like this: 
+`SELECT * FROM flights WHERE duration > 500 OR destination = "Paris";`
 
-`<a href="{% url 'add' %}">Add a Task</a>`
+This will give us either one of those. Either if the duration is over 500 or if the destination is paris and give us those results. 
 
-Now when you go to `localhost:8000/tasks` there's a link to add a task which sends it just fine. 
+== check for these possible values 
 
-So the professor says to do the same thing for add task to go back to tasks. Change the url name to `index` and that should be it. So what I have is working fine. I get sent to tasks, but the professor says there's a problem. Even though I'm not experiencing the issue, maybe it's good to try and understand why there would be a problem. 
+`SELECT * FROM flights WHERE origin IN ("New York", "Lima");`
 
-So what happened with the prof is that `index` sent over to `newyear` app. There's now a `namespace collision`. 
+This works the same as *or*, but instead it checks in one column. 
 
-So if that happens, we need to be more specific that way the link doesn't send it to a different app. 
+== use like for getting a result by not typing it all out exactly
 
-in our `urls.py` we need to give it an app name which is simply done by adding this line before urlpatterns : 
+`SELECT * FROM flights WHERE origin LIKE "%a%"`
 
-`app_name = "tasks"`
+This will search in origin for any of the string value if it has an 'a' in it. 
 
-So now in our links we have to add `tasks:` before the name. So for example: 
+== sql functions
 
-`<a href="{% url 'tasks:add' %}">Add a Task</a>`
+there are functions you can perform on the table such as counting them all together. 
 
-== Add button Send (post)
-
-We're back on the topic of the add page, but now we will make it do something. 
-
-We go back to our form in `add.html` and we need to add an action to our form that goes to `tasks:add` and we'll figure out what to do with the data we received from the form. We will also need to specify the method we will be using. Since it's a post request, we will have to specify that it is a post request by adding `method: "post"`
-
-so it would look like this: 
+== update a row 
 
 ```
-<form action="{% url 'tasks:add' %}" method="post"> ... </form>
+UPDATE flights SET duration = 430 WHERE origin = "New York" AND destination = "London";
 ```
 
-=== Forbidden 403 because of CSRF verification
-
-csrf = cross site request forgery 
-
-So now there's a permission problem and to protect getting data from an outside source, it will automatically reject it. 
-
-Interesting. So it's a cors issue all over again but with django.
-
-Now, to handle this issue for our form, we will have to add in a csrf token. 
-
-so what happens is that the form will submit and include the token and we will process if the token is valid to make sure it's coming from the correct source. 
-
-luckily django comes with something that handles that stuff, and it's actually a django's middleware and it's already added into our project. In `settings.py` for our project, you can find it in MIDDLEWARE = [] and you will find `django.middleware.csrf.CsrfViewMiddleware` already included. 
-
-To simply add our token to our form, we just need to add inside our form `{% csrf_token %}` above our other inputs. 
-
-After adding that in and refreshing our `/add` page and viewing the source, you'd notice that the csrf_token code generated a token for us by inserting it as an input with the name `csrfmiddlewaretoken`. interesting. 
-
-But now when adding an item and pressing enter, we are no longer receiving that error 403.
-
-== Use Django's form instead
-
-So for our add.html we created our own forms with html, so the prof wants to use Django's tool to manage our forms. To use it, we go in our app's `views.py` and import it in first 
-
-`from django import forms`
-
-Now we will create a class that will inherit from our import and give the data we want. So for right now we'd have one input that is a named task.
+== delete a row 
 
 ```
-class NewTaskForm(forms.Form):
-    task = forms.CharField(label="New Task")
+DELETE FROM flights WHERE destination = "Tokyo";
 ```
 
-So now we have to bring it in for our content by adding in our add function the dictionary. 
+will remove all destination with destination to Tokyo. 
+
+== foreign keys
+
+We could link to other tables to reference information. 
+
+== Starting django and database
+
+Django deals with the sql stuff so first we're going to create a database model for django to deal with. 
+
+You will find in your app a `models.py` file. 
+
+Each model will be a python class. To create a model of our already sqlite setup, I used this:
 
 ```
-{"forms": NewTaskForm()}
+class Flight(models.Model):
+    origin = models.CharField(max_length=64)
+    destination = models.CharField(max_length=64)
+    duration = models.IntegerField()
 ```
 
-So now to use it, we have to add inside of our already made form, get rid of our input and replace it with 
-`{{form}}` to be able to use the inputs we've made in views.py. 
+To apply the changes, we have to migrate them. 
+`python manage.py makemigrations`
 
-So the beauty of this feature is being able to adjust our inputs through python rather than modifying the html and you can setup client side validation pretty easily through the backend. Which is great.
+Now we will see a file in our `app/migrations/0001_initial.py`
+There, django generated the file to help work with that database. 
 
-So to test this feature, we can create a new one in `NewTaskForm()` by adding: `priority = forms.IntegerField(label="priority", min_value=1, max_value=10)`
+Now to actually apply the migration: 
+`python manage.py migrate`
 
-Now we have setup client side validation, it'll be important to also have server side validation. 
+Now it has created a new file called `db.sqlite3` with the info 
 
+== use python to modify the database
 
-Now our add function allows multiple methods, so to control our post method, we can add: 
-`if request.method == "POST"` and inside, we can create a variable with our form data by using our newtaskform(), but when we do it alone, it'll be an empty from, so we have to pull in the information as well from our post request like so. 
+Now that we've created a special model for our database, we can interact with it with python. 
 
-`form = NewTaskFrom(request.POST)`
-
-so now with that new variable we pulled in, we can check to see if it's valid by simply putting it in a condition: 
-
-`if form.is_valid()` do something. 
-
-So now that it's validated, we can finally use the information sent over. 
-
-We'll create a new variable with the input data we got. simply create our vriable using the cleaned_data and the name we gave it. 
-
-`task = form.cleaned_data['task']`
-
-after getting that value, we can now add it to our array of items! 
-
-`tasks.append(task)`
-
-That's if everything was valid, and the prof wants us to make a functionality if the form was not valid by making an else and send back the page with the same form. Sending in back the form that was setup in our request.method == post condition will also give an error with it. 
-
-This is useful if someone can brute force the client side or the server side has been updated and client hasn't refreshed the page. 
-
-Okay, after that setup when entering the input field for our form, it submits and when you go back to tasks to see the result, we see the changes. What the prof wants is that after we add a task, we should be automatically redirected. 
-
-== Redirect to a page after success
-
-This is simply done into our django project by using `HttpResponseRedirect('/tasks')` and instead of hardcoding the exact path, we could use its name. `HttpResponseRedirect(reverse("tasks:index"))` is the better approach. 
-
-Of course, in order to use `HttpResponseRedirect()` and `reverse()`, we would have to import it. 
-
-```
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-```
-
-We can then add this code right after we appended our new task into our existing array.
-
-Now after going to our tasks page to add an item and press enter, we will then automatically be redirected to our tasks page to see what we added. 
-
-== Django Sessions Initiate
-
-So the issue of what we have is that we're storing these entries into a global variable for our server so others would be able to see it. 
-
-So instead we'd use sessions to remember where it's coming from and give that specific data to that user. 
-
-So to start off, we'll remove our global variable called tasks completely and create our session inside our `index` function.
-
-First to initiate our session, we'd need to make sure it doesn't exist first. 
-
-In order to get that started, we'd ask: 
-
-`if "tasks" not in request.session:`
-
-And if it doesn't, we'll create a session called taskss. 
-and make it an array with an empty list: 
-
-`request.session["tasks"] = []`
-
-Now that we created this session, we'd bring that into our key: *ourTasks*. 
-
-`"ourTasks": request.session["tasks"]`
-
-=== Error No Such Table: django_session
-
-After adding all of that and modifying our code and refrsehing our tasks page, we get an error that says 
-`No Such Table: django_session`. 
-
-Which basically means that django stores there django session into a table but right now the table doesn't exist so we'll have to create it. 
-
-we would have to type in cli 
-
-`python manage.py migrate` to be able to create that table the server needs. 
-
-Now when we start the server back up, the route  /tasks work back to normal. 
-
-== For loop can have an empty condition
-
-So the prof is mentioning that our tasks page looks ugly without some kind of content to let you know the list is empty. 
-
-So inside of our `index.html` before our `endofor` add
-`{% empty %}` and underneath what you want to show. 
-
-== Django Sessions Adding
-
-So we initiated it just fine, but we haven't properly set it up for adding. 
-
-The only code we had for adding was `tasks.append(task)`, so all we'd need to change is: `request.session["tasks"] += [task]` which adds to our sets of tasks. I tried to append, but I suppose it's different since that didn't work. 
+in console, 
